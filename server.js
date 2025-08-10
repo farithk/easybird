@@ -5,13 +5,35 @@ const crypto = require("crypto");
 const fetch = require("node-fetch");
 
 const app = express();
-app.use(cors());
+
+// Configure CORS to allow all origins and specific headers
+app.use(cors({
+  origin: true, // Allow all origins
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'x-bold-signature',
+    'X-Requested-With',
+    'Accept',
+    'Origin'
+  ]
+}));
 
 // Use raw body for webhook route to compute signature exactly as sent by Bold
 app.use('/api/webhook', express.raw({ type: 'application/json' }));
 
 // JSON parser for the rest of routes
 app.use(express.json());
+
+// Handle preflight requests
+app.options('*', cors());
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
 
 // Create Bold payment signature
 app.post("/api/create-payment", (req, res) => {
